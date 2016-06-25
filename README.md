@@ -43,3 +43,8 @@ Dump any var/struct/slice (github.com/k0kubun/pp must be installed)
 ```bash
 gommand 'pp(os.Environ(), os.Args[1:])' 1 2
 ```
+
+Run a quick http server to serve the current directory. Print any errors encountered, such as trying to serve on a port that's already in use.
+```bash
+gommand 'http.Handle("/", http.FileServer(http.Dir("."))); fmt.Println(http.ListenAndServe(":8080",nil))'
+```

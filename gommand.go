@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"strings"
+	"os/signal"
 
 	"golang.org/x/tools/imports"
 )
@@ -26,11 +26,14 @@ func main() {
 }
 `
 
-func run(fileName string, args []string) (string, error) {
+func run(fileName string, args []string) error {
 	goArgs := []string{"run", fileName}
 	goArgs = append(goArgs, args...)
-	out, err := exec.Command("go", goArgs...).CombinedOutput()
-	return string(out), err
+	cmd := exec.Command("go", goArgs...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func tempFile() (*os.File, error) {
@@ -42,6 +45,7 @@ func tempFile() (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
+	file.Close()
 
 	// Add the .go suffix to the temp file.
 	if err = os.Rename(file.Name(), file.Name()+".go"); err != nil {
@@ -50,35 +54,44 @@ func tempFile() (*os.File, error) {
 	return os.Open(file.Name() + ".go")
 }
 
-func editImports(file *os.File) error {
-	// Read the code from the temp go file.
-	data, err := ioutil.ReadFile(file.Name())
+func editImports(fileName string) error {
+	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return err
 	}
 
 	// res holds the go file re-written with imports added.
 	opt := &imports.Options{}
-	res, err := imports.Process(file.Name(), data, opt)
+	res, err := imports.Process(fileName, data, opt)
 	if err != nil {
 		return err
 	}
 
 	// Write the edited file into the original temp file.
-	if err = ioutil.WriteFile(file.Name(), res, 0644); err != nil {
+	if err = ioutil.WriteFile(fileName, res, 0644); err != nil {
 		return err
 	}
 	return nil
 }
 
 func usage() {
-	fmt.Println("Usage: gommand [code]")
-	fmt.Println("Example: gommand 'name := \"Sno6\"; fmt.Println(name)'")
-	os.Exit(1)
+	fmt.Fprintln(os.Stderr, "Usage: gommand [code]")
+	os.Exit(2)
+}
+
+func clean(f *os.File) {
+	f.Close()
+	if err := os.Remove(f.Name()); err != nil {
+		log.Printf("main: error removing tempfile: %v\n", err)
+	}
 }
 
 func main() {
 	if len(os.Args) < 2 {
+		usage()
+	}
+	code := os.Args[1]
+	if code == "" {
 		usage()
 	}
 
@@ -86,18 +99,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("main: error creating temp file: %v\n", err)
 	}
-	defer func() {
-		file.Close()
+	defer clean(file)
 
-		if err = os.Remove(file.Name()); err != nil {
-			log.Printf("main: error removing temp file: %v\n", err)
-		}
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	go func() {
+		<-c
+		clean(file)
+		os.Exit(1)
 	}()
-
-	code := os.Args[1]
-	if code == "" {
-		usage()
-	}
 
 	// check github.com/k0kubun/pp is installed
 	ppCode := ""
@@ -112,7 +123,7 @@ func main() {
 		`
 	}
 
-	// bp holds the go boiler plate code with user inputted code added.
+	// bp holds the go boiler plate code with user code added.
 	bp := fmt.Sprintf(codeTmpl, ppCode, code)
 
 	// Write go code to temp file and add missing imports.
@@ -120,16 +131,11 @@ func main() {
 	if err = ioutil.WriteFile(file.Name(), []byte(bp), 0644); err != nil {
 		log.Printf("main: error writing code to temp file: %v\n", err)
 	}
-	if err = editImports(file); err != nil {
+	if err = editImports(file.Name()); err != nil {
 		log.Printf("main: error editing imports: %v\n", err)
 	}
 
-	out, err := run(file.Name(), os.Args[2:])
-	if err != nil {
+	if err = run(file.Name(), os.Args[2:]); err != nil {
 		log.Printf("main: error running go code query: %v\n", err)
 	}
-	if out == "" {
-		return
-	}
-	fmt.Println(strings.TrimSpace(out))
 }
