@@ -8,7 +8,6 @@ Go one liner program similar to python -c
 go get github.com/sno6/gommand
 ```
 
-=======
 ## Examples 
  
 Write any Go code in a single line context, gommand will handle your imports and main function for you.
