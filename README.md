@@ -8,26 +8,16 @@ Go one liner program similar to python -c
 go get github.com/sno6/gommand
 ```
 
-Usage
------
-```bash
-gommand 'fmt.Println("Hello, World!")'
-```
-
-or short version:
-
-```bash
-gommand 'p("Hello, World!")'
-```
-
-You can quickly write and run code without worrying about setting up a go file.
-gommand auto imports whatever packages are being used by the program so you don't have to worry about it.
 =======
 ## Examples 
  
 Write any Go code in a single line context, gommand will handle your imports and main function for you.
 
 ```gommand 'fmt.Println("Hello gommand")'``` 
+
+or short version:
+
+```gommand 'p("Hello, World!")'```
 
 You could also quickly serve your current directory in one line.
  
