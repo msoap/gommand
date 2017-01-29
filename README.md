@@ -34,9 +34,8 @@ You could also quickly serve your current directory in one line.
 ```gommand 'http.Handle("/", http.FileServer(http.Dir("."))); fmt.Println(http.ListenAndServe(":8080", nil))'```
 
 Dump any var/struct/slice (github.com/k0kubun/pp must be installed)
-```bash
-gommand 'pp(os.Environ(), os.Args[1:])' 1 2
-```
+
+```gommand 'pp(os.Environ(), os.Args[1:])' 1 2```
 
 Quickly find the date.
 
