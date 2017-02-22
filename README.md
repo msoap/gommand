@@ -14,9 +14,12 @@ Write any Go code in a single line context, gommand will handle your imports and
 
 ```gommand 'fmt.Println("Hello gommand")'``` 
 
-or short version:
+or short version of `fmt.Println()` and `fmt.Printf()`:
 
-```gommand 'p("Hello, World!")'```
+```
+gommand 'p("Hello, World!")'
+gommand 'pf("%+v\n", os.Environ())'
+```
 
 You could also quickly serve your current directory in one line.
  

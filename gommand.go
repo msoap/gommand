@@ -21,6 +21,10 @@ func p(args ...interface{}) {
 	fmt.Println(args...)
 }
 
+func pf(formatStr string, args ...interface{}) {
+	fmt.Printf(formatStr, args...)
+}
+
 func main() {
 	%v
 }
